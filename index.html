@@ -3,149 +3,76 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Trái tim đập ngẫu nhiên</title>
+  <title>Trái tim đập</title>
   <style>
-    :root{
-      --bg: #0f1724;
-      --text: #e6eef8;
-      --accent: #ff4861;
-      --size: 220px; /* kích thước trái tim */
-    }
-    html,body{height:100%;}
-    body{
-      margin:0;display:flex;align-items:center;justify-content:center;
-      background: linear-gradient(180deg,var(--bg) 0%, #071022 100%);
-      color:var(--text);font-family:Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
-      -webkit-font-smoothing:antialiased; -moz-osx-font-smoothing:grayscale;
-      padding:24px;box-sizing:border-box;
-    }
-    .card{
-      text-align:center;max-width:520px;width:100%;
-      display:flex;flex-direction:column;gap:18px;align-items:center;
-    }
-    .caption{
-      font-size:18px;font-weight:600;letter-spacing:0.2px;
-    }
-    .sub{
-      font-size:13px;opacity:0.8;margin-top:-6px;
-    }
-    /* Heart container */
-    .heart-wrap{
-      width:var(--size);height:var(--size);display:flex;align-items:center;justify-content:center;
-      cursor:pointer;user-select:none;position:relative;
-    }
-    /* make the SVG scale from center */
-    svg#heart{width:100%;height:100%;transform-origin:center center;display:block;}
-
-    /* pulse animation (single iteration) */
-    @keyframes pulse{
-      0%{transform:scale(1);}
-      30%{transform:scale(1.18);}
-      45%{transform:scale(0.98);}
-      100%{transform:scale(1);}
+    body {
+      margin: 0;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      background: #0f1724;
+      color: #fff;
+      font-family: Arial, sans-serif;
     }
 
-    /* visual glow */
-    .glow{
-      position:absolute;inset:0;filter:blur(14px);opacity:0.35;pointer-events:none;
+    .caption {
+      font-size: 20px;
+      font-weight: bold;
+      margin-bottom: 20px;
     }
 
-    /* small helper text for interactivity */
-    .hint{font-size:12px;opacity:0.7}
+    .heart {
+      position: relative;
+      width: 200px;
+      height: 180px;
+      background-color: #ff4861;
+      transform: rotate(-45deg);
+      animation: beat 1s infinite ease-in-out;
+    }
 
-    /* responsive adjustments */
-    @media (max-width:420px){:root{--size:160px;} .caption{font-size:16px}}
+    .heart::before,
+    .heart::after {
+      content: "";
+      position: absolute;
+      width: 200px;
+      height: 180px;
+      background-color: #ff4861;
+      border-radius: 50%;
+    }
+
+    .heart::before {
+      top: -100px;
+      left: 0;
+    }
+
+    .heart::after {
+      left: 100px;
+      top: 0;
+    }
+
+    @keyframes beat {
+      0%, 100% { transform: scale(1) rotate(-45deg); }
+      25% { transform: scale(1.1) rotate(-45deg); }
+      50% { transform: scale(0.95) rotate(-45deg); }
+      75% { transform: scale(1.05) rotate(-45deg); }
+    }
   </style>
 </head>
 <body>
-  <div class="card">
-    <!-- CHỮ Ở BÊN TRÊN TRÁI TIM -->
-    <div class="caption" id="topText">Yêu đời mỗi nhịp tim</div>
-    <div class="sub">Nhấn trái tim để tạm dừng / tiếp tục</div>
-
-    <div class="heart-wrap" title="Nhấn để tạm dừng / tiếp tục">
-      <!-- glow layer -->
-      <svg class="glow" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-        <defs>
-          <radialGradient id="g" cx="50%" cy="40%" r="50%">
-            <stop offset="0%" stop-color="#ff6b7a" stop-opacity="0.95" />
-            <stop offset="60%" stop-color="#ff6b7a" stop-opacity="0.2" />
-            <stop offset="100%" stop-color="#ff6b7a" stop-opacity="0" />
-          </radialGradient>
-        </defs>
-        <circle cx="50" cy="45" r="30" fill="url(#g)" />
-      </svg>
-
-      <!-- actual heart (SVG) -->
-      <svg id="heart" viewBox="0 0 32 29.6" role="img" aria-label="Trái tim yêu thương">
-        <path id="heartPath" d="M23.6 0c-2.9 0-4.8 1.6-6 3.2C16.2 1.6 14.3 0 11.4 0 6.1 0 2 4.2 2 9.4c0 7.3 10 12.7 14 20.2 4-7.5 14-12.9 14-20.2C30 4.2 25.9 0 23.6 0z" fill="var(--accent)"/>
-      </svg>
-    </div>
-
-    <div class="hint">Tốc độ đập ngẫu nhiên: 0.9s → 1.2s mỗi nhịp</div>
-  </div>
+  <div class="caption">Yêu thương mỗi nhịp tim ❤️</div>
+  <div class="heart" id="heart"></div>
 
   <script>
-    (function(){
-      const heart = document.getElementById('heart');
-      const heartWrap = document.querySelector('.heart-wrap');
-      let running = true;
+    const heart = document.getElementById('heart');
 
-      // tạo một nhịp: gán animation 1 lần với duration ngẫu nhiên trong khoảng [0.9, 1.2]
-      function randomDuration(){
-        // tạo số ngẫu nhiên thực từ 0.9 đến 1.2 với 3 chữ số
-        return (Math.random() * 0.3 + 0.9).toFixed(3);
-      }
+    function randomBeat() {
+      const duration = (Math.random() * 0.3 + 0.9).toFixed(2);
+      heart.style.animationDuration = duration + 's';
+    }
 
-      function beatOnce(){
-        if(!running) return;
-        const d = randomDuration();
-        // gán animation với 1 lần lặp
-        heart.style.animation = `pulse ${d}s cubic-bezier(.2,.8,.2,1) 1`;
-        // thêm lớp để glow mượt hơn (tùy chọn)
-        heartWrap.querySelector('.glow').style.transition = `opacity ${d}s ease-out`;
-        heartWrap.querySelector('.glow').style.opacity = 0.45;
-      }
-
-      // Sau khi animation kết thúc, gọi lại để tạo nhịp tiếp theo (với thời lượng ngẫu nhiên khác)
-      heart.addEventListener('animationend', function(){
-        // tắt glow dần rồi đợi 60ms trước khi tạo nhịp tiếp
-        const glow = heartWrap.querySelector('.glow');
-        glow.style.opacity = 0.18;
-        // dùng setTimeout nhỏ để không dính cùng 1 frame
-        setTimeout(beatOnce, 60);
-      });
-
-      // Bắt đầu chu kỳ
-      beatOnce();
-
-      // cho phép người dùng nhấn để tạm dừng / tiếp tục
-      heartWrap.addEventListener('click', function(){
-        running = !running;
-        if(running){
-          beatOnce();
-          heartWrap.style.opacity = 1;
-        } else {
-          // tạm dừng: loại bỏ animation
-          heart.style.animation = 'none';
-          heartWrap.querySelector('.glow').style.opacity = 0.08;
-          heartWrap.style.opacity = 0.65;
-        }
-      });
-
-      // keyboard accessibility: space or enter toggles
-      heartWrap.setAttribute('tabindex', '0');
-      heartWrap.addEventListener('keydown', (e)=>{
-        if(e.key===' '|| e.key==='Enter'){
-          e.preventDefault();
-          heartWrap.click();
-        }
-      });
-
-      // small improvement: ensure transform-origin is center for different browsers
-      heart.style.transformOrigin = '50% 50%';
-
-    })();
+    setInterval(randomBeat, 1000);
   </script>
 </body>
 </html>
