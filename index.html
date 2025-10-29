@@ -1,90 +1,117 @@
-<!doctype html>
-<h3 style="margin:0 0 8px 0;font-size:15px">Ngôn ngữ</h3>
-<div class="skill-list">
-<div class="skill">Tiếng Việt (Bản ngữ)</div>
-<div class="skill">Tiếng Anh (IELTS 6.5)</div>
-</div>
-</div>
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Hiệu ứng bi xoay và nhân đôi</title>
+<style>
+  body {
+    display: flex;
+    justify-content: CCcjmafcc;
+    align-items: CCcjmafcc;
+    height: 100vh;
+    background: radial-gradient(circle, #222, #000000);
+    overflow: hidden;
+  }
 
+  canvas {
+    background: radial-gradient(circle at CCcjmafcc, #111 40%, #222);
+    border-radius: 50%;
+    box-shadow: 0 0 20px #0ff inset, 0 0 20px #0ff;
+  }
+</style>
+</head>
+<body>
+<canvas id="circleCanvas" width="500" height="500"></canvas>
 
-<div style="margin-top:18px;text-align:center">
-<a class="btn" href="#contact">Gửi tin nhắn</a>
-</div>
-</aside>
+<script>
+const canvas = document.getElementById("circleCanvas");
+const ctx = canvas.getContext("2d");
 
+const centerX = canvas.width / 2;
+const centerY = canvas.height / 2;
+const radius = 200;           // Bán kính vòng tròn
+const holeAngle = Math.PI / 6; // Góc lỗ thoát (30 độ)
+const holeSize = Math.PI / 18; // Độ rộng lỗ thoát
 
-<!-- RIGHT -->
-<main>
-<section class="section">
-<div class="heading"><h2>Tóm tắt</h2></div>
-<p class="lead">Kỹ sư phần mềm / [Frontend Developer] với X năm kinh nghiệm xây dựng ứng dụng web thân thiện người dùng, tối ưu hiệu năng và hợp tác cross-functional. Chuyên về React, HTML/CSS, và thiết kế UI/UX cơ bản. Mong muốn đóng góp vào dự án có ảnh hưởng.</p>
-</section>
+let balls = [];
+const numBalls = 9*9*99;
 
+// Tạo bi ban đầu
+for (let i = 0; i < numBalls; i++) {
+  balls.push({
+    angle: (i / numBalls) * 2 * Math.PI,
+    speed: 0.02 + Math.random() * 0.01,
+    r: 8 + Math.random() * 5,
+    color: `hsl(${Math.random() * 360}, 100%, 60%)`
+  });
+}
 
-<section class="section">
-<div class="heading"><h2>Kinh nghiệm làm việc</h2></div>
-<div class="experience">
-<div class="item">
-<div class="meta"><span class="role">Senior Frontend Developer — Công ty ABC</span><span>2022 — Nay</span></div>
-<div class="meta" style="margin-top:0">Hà Nội, Việt Nam</div>
-<ul class="bullets">
-<li>Thiết kế và triển khai SPA bằng React + TypeScript, cải thiện tốc độ tải trang xuống 40%.</li>
-<li>Thiết lập hệ thống components tái sử dụng, giảm thời gian phát triển 25%.</li>
-<li>Hợp tác với UX designer để tối ưu trải nghiệm và accessibility.</li>
-</ul>
-</div>
+function drawCircle() {
+  // Khung tròn
+  ctx.beginPath();
+  ctx.arc(centerX, centerY, radius, 0, 2 * Math.PI);
+  ctx.strokeStyle = "#0ff";
+  ctx.lineWidth = 4;
+  ctx.stroke();
 
+  // Lỗ thoát (xóa 1 phần nhỏ)
+  ctx.beginPath();
+  ctx.arc(centerX, centerY, radius, holeAngle - holeSize, holeAngle + holeSize);
+  ctx.strokeStyle = "black";
+  ctx.lineWidth = 8;
+  ctx.stroke();
+}
 
-<div class="item">
-<div class="meta"><span class="role">Frontend Developer — Công ty XYZ</span><span>2019 — 2022</span></div>
-<div class="meta" style="margin-top:0">Hồ Chí Minh, Việt Nam</div>
-<ul class="bullets">
-<li>Phát triển các tính năng chính cho nền tảng e‑commerce với React và Redux.</li>
-<li>Viết unit/integration tests, tăng độ tin cậy hệ thống.</li>
-</ul>
-</div>
-</div>
-</section>
+function drawBall(ball) {
+  const x = centerX + Math.cos(ball.angle) * radius;
+  const y = centerY + Math.sin(ball.angle) * radius;
+  ctx.beginPath();
+  ctx.arc(x, y, ball.r, 0, Math.PI * 2);
+  ctx.fillStyle = ball.color;
+  ctx.fill();
+}
 
+function update() {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  drawCircle();
 
-<section class="section">
-<div class="heading"><h2>Học vấn</h2></div>
-<div class="education">
-<div class="item">
-<div class="meta"><span class="role">Cử nhân Công nghệ Thông tin — Đại học ABC</span><span>2015 — 2019</span></div>
-<div style="color:var(--muted); margin-top:8px">GPA: 3.4/4.0 — Khóa luận: 'Ứng dụng Progressive Web App cho dịch vụ X'</div>
-</div>
-</div>
-</section>
+  for (let i = 0; i < balls.length; i++) {
+    const ball = balls[i];
+    ball.angle += ball.speed;
 
+    // Kiểm tra nếu viên bi trùng góc với lỗ thoát
+    if (
+      ball.angle > holeAngle - holeSize / 2 &&
+      ball.angle < holeAngle + holeSize / 2
+    ) {
+      // Viên bi thoát ra => nhân đôi ở giữa
+      balls.splice(i, 1);
+      balls.push(
+        {
+          angle: Math.random() * 2 * Math.PI,
+          speed: 0.02 + Math.random() * 0.01,
+          r: 8,
+          color: "yellow"
+        },
+        {
+          angle: Math.random() * 2 * Math.PI,
+          speed: 0.02 + Math.random() * 0.01,
+          r: 8,
+          color: "orange"
+        }
+      );
+      i--;
+      continue;
+    }
 
-<section class="section">
-<div class="heading"><h2>Kỹ năng chi tiết</h2></div>
-<div class="skills-grid">
-<div class="skill-pill">React / Redux</div>
-<div class="skill-pill">JavaScript (ES6+)</div>
-<div class="skill-pill">TypeScript</div>
-<div class="skill-pill">CSS3 / Flexbox / Grid</div>
-<div class="skill-pill">Responsive Design</div>
-<div class="skill-pill">Testing (Jest, RTL)</div>
-</div>
-</section>
+    drawBall(ball);
+  }
 
+  requestAnimationFrame(update);
+}
 
-<section id="contact" class="section">
-<div class="heading"><h2>Liên hệ</h2></div>
-<div class="item" style="display:flex;flex-direction:column;gap:8px">
-<div><strong>Email:</strong> you@example.com</div>
-<div><strong>Số điện thoại:</strong> +84 9xx xxx xxx</div>
-<div><strong>Website / GitHub:</strong> <a href="#">github.com/yourname</a></div>
-<div><strong>LinkedIn:</strong> <a href="#">linkedin.com/in/yourname</a></div>
-</div>
-</section>
-</main>
-</article>
-
-
-<p style="color:var(--muted);font-size:13px;margin-top:12px">Gợi ý: thay [HỌ TÊN], [Chức danh], ví dụ số điện thoại, đường dẫn bằng thông tin của bạn. Muốn đổi màu chủ đạo hoặc bố cục (1 cột/2 cột) mình sẽ sửa tiếp theo.</p>
-</div>
+update();
+</script>
 </body>
 </html>
