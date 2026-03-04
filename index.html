@@ -1,277 +1,426 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { initializeApp } from 'firebase/app';
-import { 
-  getAuth, 
-  signInWithEmailAndPassword, 
-  createUserWithEmailAndPassword, 
-  onAuthStateChanged, 
-  signOut, 
-  updateProfile 
-} from 'firebase/auth';
-import { 
-  getFirestore, 
-  collection, 
-  addDoc, 
-  onSnapshot, 
-  doc, 
-  setDoc, 
-  updateDoc 
-} from 'firebase/firestore';
-import { Send, LogOut, MessageCircle, User, Bell } from 'lucide-react';
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chat Riêng Tư | leminhtu.id.vn</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Phosphor Icons -->
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+        body { font-family: 'Inter', sans-serif; }
+        .chat-container { height: calc(100vh - 80px); }
+        .message-bubble { max-width: 75%; }
+        .scrollbar-hide::-webkit-scrollbar { display: none; }
+        .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-900">
 
-// Cấu hình Firebase của bạn - ĐÃ ĐIỀN SẴN
-const firebaseConfig = {
-  apiKey: "AIzaSyDSSzbiSRqgcq8aJRBlfAXAo2NcijMgdw0",
-  authDomain: "web-chat-d2f81.firebaseapp.com",
-  projectId: "web-chat-d2f81",
-  storageBucket: "web-chat-d2f81.firebasestorage.app",
-  messagingSenderId: "16356873713",
-  appId: "1:16356873713:web:a53f211e4c80f12c97e050",
-  measurementId: "G-5VM280GKSE"
-};
-
-// Khởi tạo cố định appId theo dự án của bạn để tránh lạc mất nhau
-const appId = "web-chat-d2f81"; 
-const app = initializeApp(firebaseConfig);
-const auth = getAuth(app);
-const db = getFirestore(app);
-
-export default function App() {
-  const [user, setUser] = useState(null);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
-      setUser(currentUser);
-      setLoading(false);
-      
-      if (currentUser) {
-        // Ghi danh người dùng vào danh sách Online
-        const userRef = doc(db, 'artifacts', appId, 'public', 'data', 'users', currentUser.uid);
-        try {
-          await setDoc(userRef, {
-            uid: currentUser.uid,
-            displayName: currentUser.displayName || 'Người dùng',
-            online: true,
-            lastSeen: Date.now()
-          }, { merge: true });
-        } catch (e) {
-          console.error("Lỗi ghi dữ liệu user:", e);
-        }
-      }
-    });
-
-    return () => unsubscribe();
-  }, []);
-
-  const handleLogout = async () => {
-    if (user) {
-      const userRef = doc(db, 'artifacts', appId, 'public', 'data', 'users', user.uid);
-      await updateDoc(userRef, { online: false });
-      await signOut(auth);
-    }
-  };
-
-  if (loading) return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50">
-      <div className="text-center">
-        <div className="w-10 h-10 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-        <p className="text-gray-500 font-medium">Đang kết nối chat...</p>
-      </div>
+    <!-- Màn hình chờ / Loading -->
+    <div id="loading-screen" class="fixed inset-0 bg-white z-50 flex flex-col items-center justify-center">
+        <div class="w-12 h-12 border-4 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
+        <p class="mt-4 text-slate-500 font-medium">Đang kết nối hệ thống...</p>
     </div>
-  );
 
-  return (
-    <div className="min-h-screen bg-gray-50 flex flex-col font-sans">
-      {!user ? <AuthScreen /> : <ChatInterface user={user} onLogout={handleLogout} />}
-    </div>
-  );
-}
-
-function AuthScreen() {
-  const [username, setUsername] = useState('');
-  const [error, setError] = useState('');
-  const [isProcessing, setIsProcessing] = useState(false);
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setError('');
-    setIsProcessing(true);
-    const trimmedName = username.trim();
-    
-    if (trimmedName.length < 2) {
-      setError('Tên phải từ 2 ký tự trở lên.');
-      setIsProcessing(false);
-      return;
-    }
-
-    const safeName = trimmedName.toLowerCase().replace(/[^a-z0-9]/g, '');
-    const email = `${safeName}@chat.com`;
-    const password = `pass_${safeName}_123`;
-
-    try {
-      await signInWithEmailAndPassword(auth, email, password);
-    } catch (err) {
-      if (err.code === 'auth/user-not-found' || err.code === 'auth/invalid-credential' || err.code === 'auth/wrong-password') {
-        try {
-          const res = await createUserWithEmailAndPassword(auth, email, password);
-          await updateProfile(res.user, { displayName: trimmedName });
-          window.location.reload(); 
-        } catch (cErr) { setError("Không thể tạo tài khoản: " + cErr.message); }
-      } else { setError("Lỗi đăng nhập: " + err.message); }
-    } finally { setIsProcessing(false); }
-  };
-
-  return (
-    <div className="flex-1 flex items-center justify-center p-4">
-      <div className="bg-white p-8 rounded-3xl shadow-xl w-full max-w-sm">
-        <h2 className="text-2xl font-bold text-center mb-6 text-gray-800">Bắt đầu Chat</h2>
-        {error && <div className="bg-red-50 text-red-600 p-3 rounded-xl mb-4 text-xs">{error}</div>}
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <input type="text" required value={username} onChange={(e) => setUsername(e.target.value)}
-            className="w-full p-4 bg-gray-50 border rounded-2xl outline-none focus:ring-2 focus:ring-blue-500" placeholder="Nhập tên của bạn..." />
-          <button type="submit" disabled={isProcessing} className="w-full bg-blue-600 text-white font-bold py-4 rounded-2xl hover:bg-blue-700 transition-all">
-            {isProcessing ? 'Đang vào...' : 'Vào phòng chat'}
-          </button>
-        </form>
-      </div>
-    </div>
-  );
-}
-
-function ChatInterface({ user, onLogout }) {
-  const [messages, setMessages] = useState([]);
-  const [usersList, setUsersList] = useState([]);
-  const [selectedUser, setSelectedUser] = useState(null);
-  const [newMessage, setNewMessage] = useState('');
-  const messagesEndRef = useRef(null);
-
-  const getChatId = (u1, u2) => u1 > u2 ? `${u1}_${u2}` : `${u2}_${u1}`;
-
-  // Lắng nghe danh sách người dùng
-  useEffect(() => {
-    const usersRef = collection(db, 'artifacts', appId, 'public', 'data', 'users');
-    return onSnapshot(usersRef, (snapshot) => {
-      const uData = [];
-      snapshot.forEach((doc) => {
-        if (doc.data().uid !== user.uid) uData.push(doc.data());
-      });
-      setUsersList(uData.sort((a, b) => (b.online === a.online) ? 0 : b.online ? 1 : -1));
-    }, (err) => console.error("Lỗi Rules Users:", err));
-  }, [user]);
-
-  // Lắng nghe tin nhắn
-  useEffect(() => {
-    const msgsRef = collection(db, 'artifacts', appId, 'public', 'data', 'messages');
-    return onSnapshot(msgsRef, (snapshot) => {
-      const mData = [];
-      snapshot.forEach((doc) => mData.push({ id: doc.id, ...doc.data() }));
-      setMessages(mData.sort((a, b) => a.createdAt - b.createdAt));
-      messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-    }, (err) => console.error("Lỗi Rules Messages:", err));
-  }, []);
-
-  const handleSend = async (e) => {
-    e.preventDefault();
-    if (!newMessage.trim() || !selectedUser) return;
-    const txt = newMessage;
-    setNewMessage('');
-    await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'messages'), {
-      text: txt,
-      uid: user.uid,
-      senderName: user.displayName,
-      receiverId: selectedUser.uid,
-      chatId: getChatId(user.uid, selectedUser.uid),
-      createdAt: Date.now()
-    });
-  };
-
-  const currentChatId = selectedUser ? getChatId(user.uid, selectedUser.uid) : null;
-  const chatMessages = messages.filter(m => m.chatId === currentChatId);
-
-  return (
-    <div className="flex h-screen bg-white overflow-hidden">
-      {/* Cột trái */}
-      <div className="w-80 border-r flex flex-col bg-gray-50/30">
-        <div className="p-5 bg-white border-b flex justify-between items-center shadow-sm">
-          <div className="flex items-center gap-3 overflow-hidden">
-            <div className="w-10 h-10 bg-blue-600 rounded-full flex items-center justify-center text-white font-bold shrink-0 shadow-md">
-              {user.displayName?.[0].toUpperCase()}
-            </div>
-            <span className="font-bold text-gray-800 truncate">{user.displayName}</span>
-          </div>
-          <button onClick={onLogout} className="text-gray-400 hover:text-red-500 transition-colors"><LogOut size={20} /></button>
-        </div>
-        <div className="p-4 text-[11px] font-bold text-gray-400 uppercase tracking-widest">Bạn bè đang Online</div>
-        <div className="flex-1 overflow-y-auto px-2">
-          {usersList.length === 0 && <div className="text-center p-10 text-gray-400 text-xs italic">Đang chờ bạn bè tham gia...</div>}
-          {usersList.map(u => (
-            <div key={u.uid} onClick={() => setSelectedUser(u)}
-              className={`flex items-center gap-3 p-4 rounded-2xl cursor-pointer transition-all mb-1 ${selectedUser?.uid === u.uid ? 'bg-blue-600 text-white shadow-lg' : 'hover:bg-white hover:shadow-sm'}`}>
-              <div className="relative shrink-0">
-                <div className={`w-11 h-11 rounded-full flex items-center justify-center font-bold text-lg ${selectedUser?.uid === u.uid ? 'bg-blue-500' : 'bg-gray-200 text-gray-500'}`}>
-                  {u.displayName?.[0].toUpperCase()}
+    <!-- Màn hình Đăng nhập / Đăng ký -->
+    <div id="auth-container" class="hidden min-h-screen flex items-center justify-center p-4">
+        <div class="bg-white w-full max-w-md p-8 rounded-3xl shadow-xl border border-slate-100">
+            <!-- Header Auth -->
+            <div class="text-center mb-8">
+                <div class="inline-flex p-4 bg-blue-50 rounded-2xl text-blue-600 mb-4">
+                    <i class="ph-bold ph-chats-teardrop text-4xl"></i>
                 </div>
-                {u.online && <span className="absolute bottom-0 right-0 w-3.5 h-3.5 bg-green-500 border-2 border-white rounded-full"></span>}
-              </div>
-              <div className="flex flex-col overflow-hidden">
-                <span className="font-bold text-sm truncate">{u.displayName}</span>
-                <span className={`text-[10px] ${selectedUser?.uid === u.uid ? 'text-blue-100' : 'text-gray-400'}`}>
-                  {u.online ? 'Đang hoạt động' : 'Ngoại tuyến'}
-                </span>
-              </div>
+                <h2 id="auth-title" class="text-2xl font-bold">Chào mừng trở lại</h2>
+                <p id="auth-subtitle" class="text-slate-500 mt-2">Vui lòng đăng nhập để bắt đầu trò chuyện</p>
             </div>
-          ))}
-        </div>
-      </div>
 
-      {/* Cột phải */}
-      <div className="flex-1 flex flex-col bg-[#F8FAFC]">
-        {selectedUser ? (
-          <>
-            <div className="p-4 bg-white border-b flex items-center gap-3 font-bold text-gray-800 shadow-sm">
-              <div className="w-8 h-8 bg-gray-100 rounded-full flex items-center justify-center text-xs text-gray-400">
-                {selectedUser.displayName?.[0].toUpperCase()}
-              </div>
-              {selectedUser.displayName}
-            </div>
-            <div className="flex-1 overflow-y-auto p-6 space-y-4">
-              {chatMessages.length === 0 && (
-                <div className="h-full flex flex-col items-center justify-center text-gray-300 gap-2">
-                  <MessageCircle size={48} className="opacity-20" />
-                  <p className="text-sm italic">Gửi tin nhắn để bắt đầu trò chuyện</p>
+            <!-- Form -->
+            <form id="auth-form" class="space-y-4">
+                <div id="name-field" class="hidden">
+                    <label class="block text-sm font-semibold mb-1 ml-1 text-slate-700">Tên hiển thị</label>
+                    <div class="relative">
+                        <i class="ph ph-user absolute left-4 top-3.5 text-slate-400 text-xl"></i>
+                        <input type="text" id="auth-name" class="w-full pl-12 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-blue-500 transition-all" placeholder="Tên của bạn...">
+                    </div>
                 </div>
-              )}
-              {chatMessages.map(m => (
-                <div key={m.id} className={`flex ${m.uid === user.uid ? 'justify-end' : 'justify-start'}`}>
-                  <div className={`max-w-[75%] p-3 px-4 rounded-2xl shadow-sm text-sm ${m.uid === user.uid ? 'bg-blue-600 text-white rounded-tr-none' : 'bg-white text-gray-800 rounded-tl-none border border-gray-100'}`}>
-                    {m.text}
-                  </div>
+
+                <div>
+                    <label class="block text-sm font-semibold mb-1 ml-1 text-slate-700">Email</label>
+                    <div class="relative">
+                        <i class="ph ph-envelope-simple absolute left-4 top-3.5 text-slate-400 text-xl"></i>
+                        <input type="email" id="auth-email" required class="w-full pl-12 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-blue-500 transition-all" placeholder="email@vi-du.com">
+                    </div>
                 </div>
-              ))}
-              <div ref={messagesEndRef} />
-            </div>
-            <div className="p-4 bg-white border-t">
-              <form onSubmit={handleSend} className="flex gap-2 bg-gray-50 p-1.5 rounded-2xl border">
-                <input type="text" value={newMessage} onChange={(e) => setNewMessage(e.target.value)}
-                  placeholder={`Nhắn tin cho ${selectedUser.displayName}...`} className="flex-1 p-2.5 px-4 bg-transparent outline-none text-sm" />
-                <button type="submit" disabled={!newMessage.trim()} className="bg-blue-600 text-white p-3 rounded-xl disabled:opacity-30 transition-all">
-                  <Send size={18} />
+
+                <div id="password-field">
+                    <label class="block text-sm font-semibold mb-1 ml-1 text-slate-700">Mật khẩu</label>
+                    <div class="relative">
+                        <i class="ph ph-lock-simple absolute left-4 top-3.5 text-slate-400 text-xl"></i>
+                        <input type="password" id="auth-password" class="w-full pl-12 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-blue-500 transition-all" placeholder="••••••••">
+                    </div>
+                </div>
+
+                <button type="submit" id="auth-submit" class="w-full py-3.5 bg-blue-600 text-white font-bold rounded-xl hover:bg-blue-700 shadow-lg shadow-blue-100 transition-all active:scale-[0.98]">
+                    Đăng nhập
                 </button>
-              </form>
+            </form>
+
+            <!-- Chuyển đổi Mode -->
+            <div class="mt-8 text-center space-y-3">
+                <p id="auth-toggle-text" class="text-sm text-slate-500">
+                    Chưa có tài khoản? <button onclick="toggleAuthMode('signup')" class="text-blue-600 font-bold hover:underline">Đăng ký ngay</button>
+                </p>
+                <button id="forgot-btn" onclick="toggleAuthMode('forgot')" class="text-sm text-slate-400 hover:text-blue-600 transition-colors">Quên mật khẩu?</button>
             </div>
-          </>
-        ) : (
-          <div className="flex-1 flex flex-col items-center justify-center text-gray-400 gap-4">
-             <div className="bg-white p-10 rounded-3xl shadow-sm border border-gray-50 flex flex-col items-center gap-4">
-                <div className="p-4 bg-blue-50 rounded-full text-blue-200">
-                   <User size={64} />
-                </div>
-                <p className="font-medium text-gray-500">Hãy chọn một người bạn để bắt đầu</p>
-             </div>
-          </div>
-        )}
-      </div>
+        </div>
     </div>
-  );
-}
+
+    <!-- Giao diện Chat -->
+    <div id="chat-container" class="hidden h-screen flex overflow-hidden">
+        <!-- Sidebar -->
+        <div id="sidebar" class="w-80 border-r border-slate-200 bg-white flex flex-col transition-all duration-300">
+            <!-- User Profile -->
+            <div class="p-5 border-b border-slate-100 flex items-center justify-between">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 bg-blue-600 rounded-full flex items-center justify-center text-white font-bold text-lg shadow-md" id="my-avatar">?</div>
+                    <div class="flex flex-col overflow-hidden">
+                        <span class="font-bold text-slate-800 text-sm truncate" id="my-name">Đang tải...</span>
+                        <span class="text-[10px] text-green-500 font-bold uppercase tracking-wider">Trực tuyến</span>
+                    </div>
+                </div>
+                <button onclick="logout()" class="p-2 text-slate-400 hover:text-red-500 transition-colors">
+                    <i class="ph-bold ph-sign-out text-xl"></i>
+                </button>
+            </div>
+
+            <!-- Section Title -->
+            <div class="px-5 py-4 flex items-center justify-between">
+                <span class="text-[11px] font-bold text-slate-400 uppercase tracking-widest">Bạn bè</span>
+                <button onclick="requestNotifyPermission()" id="noti-badge" class="p-1.5 bg-blue-50 text-blue-600 rounded-lg text-xs font-bold hover:bg-blue-100 transition-all">
+                    <i class="ph ph-bell"></i>
+                </button>
+            </div>
+
+            <!-- List Users -->
+            <div id="users-list" class="flex-1 overflow-y-auto px-2 space-y-1 scrollbar-hide">
+                <!-- User items injected here -->
+            </div>
+        </div>
+
+        <!-- Chat Area -->
+        <div class="flex-1 flex flex-col bg-slate-50 relative">
+            <div id="welcome-view" class="absolute inset-0 z-10 bg-slate-50 flex flex-col items-center justify-center p-8 text-center">
+                <div class="w-24 h-24 bg-white rounded-full flex items-center justify-center shadow-sm border border-slate-100 mb-6">
+                    <i class="ph-bold ph-chats text-blue-100 text-5xl"></i>
+                </div>
+                <h3 class="text-xl font-bold text-slate-800">Bắt đầu trò chuyện</h3>
+                <p class="text-slate-500 max-w-xs mt-2">Chọn một người bạn từ danh sách bên trái để gửi tin nhắn riêng tư.</p>
+            </div>
+
+            <!-- Active Chat Header -->
+            <div id="chat-header" class="hidden p-4 bg-white border-b border-slate-200 flex items-center gap-3 shadow-sm z-20">
+                <div id="active-avatar" class="w-10 h-10 bg-slate-200 rounded-full flex items-center justify-center font-bold text-slate-500">?</div>
+                <div class="flex flex-col">
+                    <span id="active-name" class="font-bold text-slate-800">Tên bạn bè</span>
+                    <span id="active-status" class="text-xs text-slate-400">Đang hoạt động</span>
+                </div>
+            </div>
+
+            <!-- Messages List -->
+            <div id="messages-container" class="flex-1 overflow-y-auto p-6 flex flex-col space-y-4 scrollbar-hide">
+                <!-- Messages injected here -->
+            </div>
+
+            <!-- Input Area -->
+            <div id="chat-input-area" class="hidden p-4 bg-white border-t border-slate-200">
+                <form id="chat-form" class="flex gap-3 bg-slate-50 p-2 rounded-2xl border border-slate-200">
+                    <input type="text" id="msg-input" autocomplete="off" placeholder="Nhập tin nhắn..." class="flex-1 py-2 px-4 bg-transparent outline-none text-sm text-slate-700">
+                    <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white w-10 h-10 rounded-xl flex items-center justify-center shadow-lg shadow-blue-100 transition-all active:scale-90">
+                        <i class="ph-bold ph-paper-plane-right text-lg"></i>
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Firebase SDKs -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { 
+            getAuth, onAuthStateChanged, signInWithEmailAndPassword, 
+            createUserWithEmailAndPassword, updateProfile, 
+            sendPasswordResetEmail, signOut 
+        } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { 
+            getFirestore, collection, doc, setDoc, updateDoc, 
+            addDoc, onSnapshot, query, where, orderBy 
+        } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        // CONFIG CỦA BẠN
+        const firebaseConfig = {
+            apiKey: "AIzaSyDSSzbiSRqgcq8aJRBlfAXAo2NcijMgdw0",
+            authDomain: "web-chat-d2f81.firebaseapp.com",
+            projectId: "web-chat-d2f81",
+            storageBucket: "web-chat-d2f81.firebasestorage.app",
+            messagingSenderId: "16356873713",
+            appId: "1:16356873713:web:a53f211e4c80f12c97e050",
+            measurementId: "G-5VM280GKSE"
+        };
+
+        const appId = "web-chat-d2f81";
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+
+        let currentUser = null;
+        let authMode = 'login'; // login, signup, forgot
+        let selectedUser = null;
+        let messagesList = [];
+
+        // UI Helpers
+        window.toggleAuthMode = (mode) => {
+            authMode = mode;
+            const title = document.getElementById('auth-title');
+            const subtitle = document.getElementById('auth-subtitle');
+            const submit = document.getElementById('auth-submit');
+            const toggleText = document.getElementById('auth-toggle-text');
+            const nameField = document.getElementById('name-field');
+            const passwordField = document.getElementById('password-field');
+            const forgotBtn = document.getElementById('forgot-btn');
+
+            nameField.classList.add('hidden');
+            passwordField.classList.remove('hidden');
+            forgotBtn.classList.remove('hidden');
+
+            if (mode === 'signup') {
+                title.textContent = "Tạo tài khoản";
+                subtitle.textContent = "Bắt đầu những cuộc trò chuyện tuyệt vời";
+                submit.textContent = "Đăng ký";
+                toggleText.innerHTML = `Đã có tài khoản? <button onclick="toggleAuthMode('login')" class="text-blue-600 font-bold hover:underline">Đăng nhập</button>`;
+                nameField.classList.remove('hidden');
+            } else if (mode === 'login') {
+                title.textContent = "Chào mừng trở lại";
+                subtitle.textContent = "Vui lòng đăng nhập để bắt đầu trò chuyện";
+                submit.textContent = "Đăng nhập";
+                toggleText.innerHTML = `Chưa có tài khoản? <button onclick="toggleAuthMode('signup')" class="text-blue-600 font-bold hover:underline">Đăng ký ngay</button>`;
+            } else if (mode === 'forgot') {
+                title.textContent = "Quên mật khẩu";
+                subtitle.textContent = "Nhập email để nhận link khôi phục";
+                submit.textContent = "Gửi yêu cầu";
+                toggleText.innerHTML = `Quay lại <button onclick="toggleAuthMode('login')" class="text-blue-600 font-bold hover:underline">Đăng nhập</button>`;
+                passwordField.classList.add('hidden');
+                forgotBtn.classList.add('hidden');
+            }
+        };
+
+        // Auth Logic
+        document.getElementById('auth-form').onsubmit = async (e) => {
+            e.preventDefault();
+            const email = document.getElementById('auth-email').value.trim();
+            const pass = document.getElementById('auth-password').value;
+            const name = document.getElementById('auth-name').value.trim();
+
+            try {
+                if (authMode === 'signup') {
+                    const res = await createUserWithEmailAndPassword(auth, email, pass);
+                    await updateProfile(res.user, { displayName: name });
+                    window.location.reload();
+                } else if (authMode === 'login') {
+                    await signInWithEmailAndPassword(auth, email, pass);
+                } else if (authMode === 'forgot') {
+                    await sendPasswordResetEmail(auth, email);
+                    alert("Đã gửi email khôi phục. Vui lòng kiểm tra hộp thư!");
+                    toggleAuthMode('login');
+                }
+            } catch (err) {
+                alert("Lỗi: " + err.message);
+            }
+        };
+
+        window.logout = async () => {
+            if (currentUser) {
+                const userRef = doc(db, 'artifacts', appId, 'public', 'data', 'users', currentUser.uid);
+                await updateDoc(userRef, { online: false, lastSeen: Date.now() });
+                await signOut(auth);
+            }
+        };
+
+        // Chat Logic
+        onAuthStateChanged(auth, async (user) => {
+            document.getElementById('loading-screen').classList.add('hidden');
+            if (user) {
+                currentUser = user;
+                document.getElementById('auth-container').classList.add('hidden');
+                document.getElementById('chat-container').classList.remove('hidden');
+                
+                document.getElementById('my-name').textContent = user.displayName || user.email;
+                document.getElementById('my-avatar').textContent = (user.displayName || 'U')[0].toUpperCase();
+
+                // Update Online Status
+                const userRef = doc(db, 'artifacts', appId, 'public', 'data', 'users', user.uid);
+                await setDoc(userRef, {
+                    uid: user.uid,
+                    displayName: user.displayName || user.email,
+                    online: true,
+                    lastSeen: Date.now()
+                }, { merge: true });
+
+                listenToUsers();
+                listenToAllMessages();
+            } else {
+                document.getElementById('auth-container').classList.remove('hidden');
+                document.getElementById('chat-container').classList.add('hidden');
+            }
+        });
+
+        function listenToUsers() {
+            const q = collection(db, 'artifacts', appId, 'public', 'data', 'users');
+            onSnapshot(q, (snapshot) => {
+                const usersList = document.getElementById('users-list');
+                usersList.innerHTML = '';
+                
+                const sortedUsers = [];
+                snapshot.forEach(doc => {
+                    if (doc.id !== currentUser.uid) sortedUsers.push(doc.data());
+                });
+
+                // Sort online first
+                sortedUsers.sort((a, b) => (b.online === a.online) ? 0 : b.online ? 1 : -1);
+
+                sortedUsers.forEach(u => {
+                    const activeClass = selectedUser?.uid === u.uid ? 'bg-blue-600 text-white shadow-lg' : 'hover:bg-white text-slate-700 hover:shadow-sm';
+                    const div = document.createElement('div');
+                    div.className = `flex items-center gap-3 p-4 rounded-2xl cursor-pointer transition-all mb-1 ${activeClass}`;
+                    div.onclick = () => selectPartner(u);
+                    
+                    div.innerHTML = `
+                        <div class="relative shrink-0">
+                            <div class="w-11 h-11 rounded-full flex items-center justify-center font-bold text-lg ${selectedUser?.uid === u.uid ? 'bg-blue-500' : 'bg-slate-200'}">
+                                ${u.displayName[0].toUpperCase()}
+                            </div>
+                            ${u.online ? '<span class="absolute bottom-0 right-0 w-3.5 h-3.5 bg-green-500 border-2 border-white rounded-full"></span>' : ''}
+                        </div>
+                        <div class="flex flex-col overflow-hidden">
+                            <span class="font-bold text-sm truncate">${u.displayName}</span>
+                            <span class="text-[10px] ${selectedUser?.uid === u.uid ? 'text-blue-100' : 'text-slate-400'}">${u.online ? 'Đang trực tuyến' : 'Ngoại tuyến'}</span>
+                        </div>
+                    `;
+                    usersList.appendChild(div);
+                });
+            });
+        }
+
+        window.selectPartner = (user) => {
+            selectedUser = user;
+            document.getElementById('welcome-view').classList.add('hidden');
+            document.getElementById('chat-header').classList.remove('hidden');
+            document.getElementById('chat-input-area').classList.remove('hidden');
+            
+            document.getElementById('active-name').textContent = user.displayName;
+            document.getElementById('active-status').textContent = user.online ? 'Đang hoạt động' : 'Đã offline';
+            document.getElementById('active-avatar').textContent = user.displayName[0].toUpperCase();
+            
+            listenToUsers(); // Refresh sidebar UI
+            renderMessages();
+        };
+
+        function listenToAllMessages() {
+            const q = collection(db, 'artifacts', appId, 'public', 'data', 'messages');
+            onSnapshot(q, (snapshot) => {
+                const newMsgs = [];
+                snapshot.forEach(doc => newMsgs.push({ id: doc.id, ...doc.data() }));
+                const oldLen = messagesList.length;
+                messagesList = newMsgs.sort((a, b) => a.createdAt - b.createdAt);
+                
+                // Notify if new message
+                if (messagesList.length > oldLen && oldLen > 0) {
+                    const last = messagesList[messagesList.length - 1];
+                    if (last.uid !== currentUser.uid && last.receiverId === currentUser.uid) {
+                        pushNotification(last);
+                    }
+                }
+                
+                renderMessages();
+            });
+        }
+
+        function renderMessages() {
+            if (!selectedUser) return;
+            const container = document.getElementById('messages-container');
+            container.innerHTML = '';
+            
+            const chatId = currentUser.uid > selectedUser.uid ? `${currentUser.uid}_${selectedUser.uid}` : `${selectedUser.uid}_${currentUser.uid}`;
+            const filtered = messagesList.filter(m => m.chatId === chatId);
+            
+            if (filtered.length === 0) {
+                container.innerHTML = `<div class="flex-1 flex items-center justify-center text-slate-300 text-sm italic">Bắt đầu cuộc trò chuyện vui vẻ...</div>`;
+                return;
+            }
+
+            filtered.forEach(m => {
+                const isMine = m.uid === currentUser.uid;
+                const div = document.createElement('div');
+                div.className = `flex ${isMine ? 'justify-end' : 'justify-start'}`;
+                
+                div.innerHTML = `
+                    <div class="message-bubble px-4 py-2.5 rounded-2xl shadow-sm text-sm leading-relaxed ${isMine ? 'bg-blue-600 text-white rounded-tr-none' : 'bg-white text-slate-800 rounded-tl-none border border-slate-100'}">
+                        ${m.text}
+                    </div>
+                `;
+                container.appendChild(div);
+            });
+            container.scrollTop = container.scrollHeight;
+        }
+
+        document.getElementById('chat-form').onsubmit = async (e) => {
+            e.preventDefault();
+            const input = document.getElementById('msg-input');
+            const text = input.value.trim();
+            if (!text || !selectedUser) return;
+            
+            input.value = '';
+            const chatId = currentUser.uid > selectedUser.uid ? `${currentUser.uid}_${selectedUser.uid}` : `${selectedUser.uid}_${currentUser.uid}`;
+            
+            await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'messages'), {
+                text,
+                uid: currentUser.uid,
+                senderName: currentUser.displayName,
+                receiverId: selectedUser.uid,
+                chatId: chatId,
+                createdAt: Date.now()
+            });
+        };
+
+        // Notifications
+        window.requestNotifyPermission = () => {
+            if (Notification.permission !== 'granted') {
+                Notification.requestPermission().then(p => {
+                    if(p === 'granted') alert('Đã bật thông báo thành công!');
+                });
+            } else {
+                alert('Thông báo đã được bật sẵn!');
+            }
+        };
+
+        function pushNotification(msg) {
+            if (Notification.permission === 'granted') {
+                new Notification(`Tin nhắn từ ${msg.senderName}`, {
+                    body: msg.text,
+                    icon: 'https://cdn-icons-png.flaticon.com/512/1041/1041916.png'
+                });
+            }
+        }
+
+        // Offline handler
+        window.addEventListener('beforeunload', () => {
+            if (currentUser) {
+                const userRef = doc(db, 'artifacts', appId, 'public', 'data', 'users', currentUser.uid);
+                updateDoc(userRef, { online: false, lastSeen: Date.now() });
+            }
+        });
+    </script>
+</body>
+</html>
