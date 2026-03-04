@@ -2,6 +2,7 @@
 const firebaseConfig = { 
   apiKey : "AIzaSyDSSzbiSRqgcq8aJRBlfAXAo2NcijMgdw0" , 
   authDomain : "web-chat-d2f81.firebaseapp.com" , 
+  databaseURL: "https://web-chat-d2f81-default-rtdb.asia-southeast1.firebasedatabase.app",
   projectId : "web-chat-d2f81" , 
   storageBucket : "web-chat-d2f81.firebasestorage.app" , 
   messagingSenderId : "16356873713" , 
