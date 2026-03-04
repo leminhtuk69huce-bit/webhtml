@@ -1,12 +1,12 @@
 // BẠN PHẢI THAY THẾ CONFIG NÀY BẰNG CONFIG TRONG PROJECT FIREBASE CỦA BẠN
-const firebaseConfig = {
-    apiKey: "AIzaSyB-xxxxx...",
-    authDomain: "your-project.firebaseapp.com",
-    databaseURL: "https://your-project-default-rtdb.firebaseio.com",
-    projectId: "your-project",
-    storageBucket: "your-project.appspot.com",
-    messagingSenderId: "123456789",
-    appId: "1:1234:web:abcd"
+const firebaseConfig = { 
+  apiKey : "AIzaSyDSSzbiSRqgcq8aJRBlfAXAo2NcijMgdw0" , 
+  authDomain : "web-chat-d2f81.firebaseapp.com" , 
+  projectId : "web-chat-d2f81" , 
+  storageBucket : "web-chat-d2f81.firebasestorage.app" , 
+  messagingSenderId : "16356873713" , 
+  appId : "1:16356873713:web:a53f211e4c80f12c97e050" , 
+  measurementId : "G-5VM280GKSE" 
 };
 
 // Khởi tạo Firebase
