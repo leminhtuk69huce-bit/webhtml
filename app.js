@@ -84,7 +84,7 @@ logoutBtn.addEventListener('click', () => {
     });
 });
 
-// 4. HIỂN THỊ DANH SÁCH BẠN BÈ
+// 4. HIỂN THỊ DANH SÁCH BẠN BÈ (Chỉ hiện người Online)
 function loadUsers() {
     db.ref('users').on('value', (snapshot) => {
         userList.innerHTML = '';
@@ -92,14 +92,18 @@ function loadUsers() {
         
         for (let user in users) {
             if (user !== currentUser) { // Không hiển thị chính mình
-                const li = document.createElement('li');
                 const isOnline = users[user].status === 'online';
-                li.innerHTML = `
-                    <span>${user}</span>
-                    <span class="status-dot ${isOnline ? 'online' : 'offline'}"></span>
-                `;
-                li.addEventListener('click', () => selectUserToChat(user));
-                userList.appendChild(li);
+                
+                // CHỈ THÊM VÀO DANH SÁCH NẾU ĐANG ONLINE
+                if (isOnline) {
+                    const li = document.createElement('li');
+                    li.innerHTML = `
+                        <span>${user}</span>
+                        <span class="status-dot online"></span>
+                    `;
+                    li.addEventListener('click', () => selectUserToChat(user));
+                    userList.appendChild(li);
+                }
             }
         }
     });
