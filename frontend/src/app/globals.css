@@ -1,0 +1,373 @@
+@import "tailwindcss";
+
+/* ============================================================
+   DESIGN TOKENS — Student Workspace Glassmorphism Design System
+   Stack: Next.js 16 + Tailwind v4 + Geist Font
+   ============================================================ */
+
+@theme inline {
+  /* Fonts */
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+
+  /* Brand Colors — Indigo/Violet gradient palette */
+  --color-brand-50: oklch(0.97 0.02 270);
+  --color-brand-100: oklch(0.93 0.05 270);
+  --color-brand-200: oklch(0.87 0.1 270);
+  --color-brand-300: oklch(0.78 0.17 270);
+  --color-brand-400: oklch(0.67 0.24 270);
+  --color-brand-500: oklch(0.58 0.28 270);
+  --color-brand-600: oklch(0.50 0.27 270);
+  --color-brand-700: oklch(0.42 0.24 270);
+  --color-brand-800: oklch(0.34 0.19 270);
+  --color-brand-900: oklch(0.26 0.13 270);
+
+  /* Surface Colors (dark glassmorphism) */
+  --color-surface-base: oklch(0.08 0.01 270);
+  --color-surface-1: oklch(0.11 0.015 270);
+  --color-surface-2: oklch(0.14 0.02 270);
+  --color-surface-3: oklch(0.18 0.025 270);
+  --color-surface-4: oklch(0.22 0.03 270);
+
+  /* Glass surfaces */
+  --color-glass-1: oklch(1 0 0 / 0.04);
+  --color-glass-2: oklch(1 0 0 / 0.07);
+  --color-glass-3: oklch(1 0 0 / 0.11);
+  --color-glass-border: oklch(1 0 0 / 0.12);
+  --color-glass-border-hover: oklch(1 0 0 / 0.22);
+
+  /* Text Colors */
+  --color-text-primary: oklch(0.96 0.005 270);
+  --color-text-secondary: oklch(0.70 0.02 270);
+  --color-text-muted: oklch(0.50 0.02 270);
+  --color-text-disabled: oklch(0.35 0.01 270);
+
+  /* Status Colors */
+  --color-success: oklch(0.72 0.18 145);
+  --color-warning: oklch(0.82 0.18 75);
+  --color-error: oklch(0.65 0.22 25);
+  --color-info: oklch(0.68 0.18 220);
+
+  /* Kanban column colors */
+  --color-todo: oklch(0.60 0.16 240);
+  --color-in-progress: oklch(0.72 0.18 55);
+  --color-almost-done: oklch(0.68 0.20 300);
+  --color-done: oklch(0.72 0.18 145);
+
+  /* Gradients (used in bg utility) */
+  --gradient-brand: linear-gradient(135deg, oklch(0.50 0.27 270), oklch(0.55 0.28 305));
+  --gradient-surface: linear-gradient(180deg, oklch(0.11 0.015 270), oklch(0.08 0.01 270));
+  --gradient-glow: radial-gradient(ellipse at top, oklch(0.50 0.27 270 / 0.15), transparent 60%);
+}
+
+/* ============================================================
+   BASE STYLES
+   ============================================================ */
+*, *::before, *::after {
+  box-sizing: border-box;
+}
+
+html {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  scroll-behavior: smooth;
+}
+
+body {
+  background-color: var(--color-surface-base);
+  color: var(--color-text-primary);
+  font-family: var(--font-sans), system-ui, sans-serif;
+  line-height: 1.6;
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: var(--color-surface-1);
+}
+::-webkit-scrollbar-thumb {
+  background: var(--color-surface-4);
+  border-radius: 9999px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--color-brand-600);
+}
+
+/* Selection */
+::selection {
+  background: oklch(0.50 0.27 270 / 0.35);
+  color: var(--color-text-primary);
+}
+
+/* Focus ring */
+:focus-visible {
+  outline: 2px solid var(--color-brand-400);
+  outline-offset: 2px;
+  border-radius: 6px;
+}
+
+/* ============================================================
+   GLASSMORPHISM UTILITY CLASSES
+   ============================================================ */
+
+/* Glass card base */
+.glass {
+  background: var(--color-glass-2);
+  backdrop-filter: blur(16px) saturate(180%);
+  -webkit-backdrop-filter: blur(16px) saturate(180%);
+  border: 1px solid var(--color-glass-border);
+  border-radius: 16px;
+}
+
+.glass-sm {
+  background: var(--color-glass-1);
+  backdrop-filter: blur(8px) saturate(160%);
+  -webkit-backdrop-filter: blur(8px) saturate(160%);
+  border: 1px solid var(--color-glass-border);
+  border-radius: 12px;
+}
+
+.glass-hover {
+  transition: background 0.2s ease, border-color 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
+}
+.glass-hover:hover {
+  background: var(--color-glass-3);
+  border-color: var(--color-glass-border-hover);
+  transform: translateY(-1px);
+  box-shadow: 0 8px 32px oklch(0 0 0 / 0.4);
+}
+
+/* Glow effects */
+.glow-brand {
+  box-shadow: 0 0 24px oklch(0.50 0.27 270 / 0.3),
+              0 0 48px oklch(0.50 0.27 270 / 0.1);
+}
+.glow-success { box-shadow: 0 0 20px oklch(0.72 0.18 145 / 0.25); }
+.glow-error   { box-shadow: 0 0 20px oklch(0.65 0.22 25 / 0.25); }
+
+/* Brand gradient button */
+.btn-brand {
+  background: linear-gradient(135deg, oklch(0.50 0.27 270), oklch(0.55 0.28 305));
+  color: white;
+  border: none;
+  border-radius: 10px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: opacity 0.2s ease, transform 0.15s ease, box-shadow 0.2s ease;
+  box-shadow: 0 4px 16px oklch(0.50 0.27 270 / 0.35);
+}
+.btn-brand:hover {
+  opacity: 0.92;
+  transform: translateY(-1px);
+  box-shadow: 0 6px 24px oklch(0.50 0.27 270 / 0.5);
+}
+.btn-brand:active {
+  transform: translateY(0);
+  opacity: 0.85;
+}
+.btn-brand:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* Ghost button */
+.btn-ghost {
+  background: var(--color-glass-1);
+  color: var(--color-text-secondary);
+  border: 1px solid var(--color-glass-border);
+  border-radius: 10px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.2s ease, color 0.2s ease, border-color 0.2s ease;
+}
+.btn-ghost:hover {
+  background: var(--color-glass-2);
+  color: var(--color-text-primary);
+  border-color: var(--color-glass-border-hover);
+}
+
+/* Danger button */
+.btn-danger {
+  background: linear-gradient(135deg, oklch(0.60 0.22 25), oklch(0.55 0.22 15));
+  color: white;
+  border: none;
+  border-radius: 10px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: opacity 0.2s ease, transform 0.15s ease;
+}
+.btn-danger:hover {
+  opacity: 0.88;
+  transform: translateY(-1px);
+}
+
+/* Input field */
+.input-glass {
+  background: var(--color-glass-1);
+  border: 1px solid var(--color-glass-border);
+  border-radius: 10px;
+  color: var(--color-text-primary);
+  transition: border-color 0.2s ease, background 0.2s ease, box-shadow 0.2s ease;
+  width: 100%;
+}
+.input-glass::placeholder {
+  color: var(--color-text-muted);
+}
+.input-glass:focus {
+  outline: none;
+  border-color: var(--color-brand-400);
+  background: var(--color-glass-2);
+  box-shadow: 0 0 0 3px oklch(0.50 0.27 270 / 0.15);
+}
+
+/* Badge */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  font-size: 0.75rem;
+  font-weight: 600;
+  padding: 0.2rem 0.6rem;
+  border-radius: 9999px;
+  letter-spacing: 0.02em;
+}
+
+/* Animated background orbs (Login page) */
+.bg-orb {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(80px);
+  opacity: 0.18;
+  animation: orb-float 12s ease-in-out infinite;
+  pointer-events: none;
+}
+.bg-orb-1 {
+  width: 600px; height: 600px;
+  background: oklch(0.50 0.27 270);
+  top: -15%; left: -10%;
+  animation-delay: 0s;
+}
+.bg-orb-2 {
+  width: 500px; height: 500px;
+  background: oklch(0.60 0.24 305);
+  bottom: -10%; right: -5%;
+  animation-delay: -6s;
+}
+.bg-orb-3 {
+  width: 350px; height: 350px;
+  background: oklch(0.65 0.22 240);
+  top: 40%; left: 45%;
+  animation-delay: -3s;
+}
+
+@keyframes orb-float {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  33%       { transform: translate(30px, -40px) scale(1.05); }
+  66%       { transform: translate(-20px, 20px) scale(0.97); }
+}
+
+/* Shimmer loading animation */
+.shimmer {
+  background: linear-gradient(
+    90deg,
+    var(--color-glass-1) 25%,
+    var(--color-glass-2) 50%,
+    var(--color-glass-1) 75%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+}
+@keyframes shimmer {
+  0%   { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+/* Slide-in animation */
+@keyframes slide-in-up {
+  from { opacity: 0; transform: translateY(16px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.animate-slide-in {
+  animation: slide-in-up 0.35s ease forwards;
+}
+
+/* Fade in */
+@keyframes fade-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+.animate-fade-in {
+  animation: fade-in 0.3s ease forwards;
+}
+
+/* Toast notification slide */
+@keyframes toast-in {
+  from { opacity: 0; transform: translateX(110%); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+@keyframes toast-out {
+  from { opacity: 1; transform: translateX(0); }
+  to   { opacity: 0; transform: translateX(110%); }
+}
+.toast-enter { animation: toast-in 0.35s cubic-bezier(0.34,1.56,0.64,1) forwards; }
+.toast-exit  { animation: toast-out 0.25s ease forwards; }
+
+/* Progress bar shimmer */
+@keyframes progress-shimmer {
+  0%   { background-position: -200px 0; }
+  100% { background-position: calc(200px + 100%) 0; }
+}
+
+/* Kanban drag ghost */
+.dragging {
+  opacity: 0.6;
+  transform: rotate(3deg) scale(1.02);
+  box-shadow: 0 16px 48px oklch(0 0 0 / 0.5);
+}
+
+/* Sidebar nav item */
+.nav-item {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.65rem 1rem;
+  border-radius: 10px;
+  color: var(--color-text-secondary);
+  font-size: 0.9rem;
+  font-weight: 500;
+  transition: background 0.18s ease, color 0.18s ease;
+  cursor: pointer;
+  text-decoration: none;
+}
+.nav-item:hover {
+  background: var(--color-glass-2);
+  color: var(--color-text-primary);
+}
+.nav-item.active {
+  background: linear-gradient(135deg, oklch(0.50 0.27 270 / 0.25), oklch(0.55 0.28 305 / 0.15));
+  color: var(--color-brand-300);
+  border: 1px solid oklch(0.50 0.27 270 / 0.25);
+}
+
+/* Divider */
+.divider {
+  border: none;
+  border-top: 1px solid var(--color-glass-border);
+}
+
+/* Avatar placeholder */
+.avatar {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  font-weight: 700;
+  background: linear-gradient(135deg, oklch(0.50 0.27 270), oklch(0.55 0.28 305));
+  color: white;
+  flex-shrink: 0;
+}
